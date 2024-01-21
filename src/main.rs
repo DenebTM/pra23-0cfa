@@ -33,6 +33,7 @@ fn main() {
 
     let program = parser::parse(&input);
 
+    // uncomment this example program if the parser fails for whatever reason
     // let program = Expression {
     //     label: 5,
     //     term: Term::Application(
@@ -59,15 +60,23 @@ fn main() {
     //     ),
     // };
 
+    // parse error -> print location of the error
     if let Err(err) = program {
-        let col = err.location.column;
+        println!(
+            "\nError parsing program at line {}, column {}:",
+            err.location.line, err.location.column
+        );
 
-        println!("{:>col$}", "^");
-        println!("Parse error: {err}");
+        let line = input.split('\n').take(err.location.line).last().unwrap();
+        println!("{line}");
+        println!("{:>col$}", "^", col = err.location.column);
+
+        println!("Expected {}", err.expected);
 
         return;
     }
 
+    // parsed successfully -> proceed
     let program = program.unwrap();
     println!("Program: {program}");
 

@@ -10,16 +10,17 @@ fn expr(term: Term) -> Box<Expression> {
 }
 
 peg::parser!(grammar func() for str {
+    rule _ = [' ' | '\n']*
+    rule ws_or_eof() = &(_ / ![_])
     rule alpha() -> char = ['a'..='z' | 'A'..='Z']
     rule digit() -> char = ['0'..='9']
-
-    rule _ = [' ' | '\n']*
+    rule keyword() = "if" / "then" / "else" / "let" / "in"
 
     rule constant() -> Constant
         = n:$("-"? digit()+) {? n.parse().or(Err("i32")) }
 
     rule variable() -> Variable
-        = x:alpha() { x }
+        = !keyword() x:alpha() ws_or_eof() { x }
 
     rule closure() -> Term
         = "fn" _ x:variable() _ "->" _ t:term() {
@@ -41,7 +42,7 @@ peg::parser!(grammar func() for str {
             Term::Let(x, expr(t1), expr(t2))
         }
 
-    rule abexp() -> Term = precedence!{
+    rule binary_op() -> Term = precedence!{
         x:(@) _ "<"  _ y:@ { Term::BinaryOp(expr(x), "<" .to_string(), expr(y)) }
         x:(@) _ "<=" _ y:@ { Term::BinaryOp(expr(x), "<=".to_string(), expr(y)) }
         x:(@) _ "==" _ y:@ { Term::BinaryOp(expr(x), "==".to_string(), expr(y)) }
@@ -59,7 +60,7 @@ peg::parser!(grammar func() for str {
         --
         n:constant() { Term::Constant(n) }
         v:variable() { Term::Variable(v) }
-        "(" b:abexp() ")" { b }
+        "(" b:binary_op() ")" { b }
     }
 
     #[cache_left_rec]
@@ -74,11 +75,11 @@ peg::parser!(grammar func() for str {
                 c:closure() { c }
                 r:recursive_closure() { r }
                 --
-                b:abexp() { b }
+                b:binary_op() { b }
                 --
-                "(" t:term() ")" { t }
+                "(" _ t:term() _ ")" { t }
             }
-        _? { t }
+        _ { t }
 });
 
 fn relabel(expr: Expression, start: Label) -> (Expression, Label) {
