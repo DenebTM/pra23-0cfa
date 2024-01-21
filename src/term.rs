@@ -3,7 +3,7 @@ use crate::{
     types::{Operator, Variable},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Term {
     Constant,
     Variable(Variable),
