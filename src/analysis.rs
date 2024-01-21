@@ -11,13 +11,16 @@ pub type AbstractEnv = HashMap<Variable, HashSet<Term>>;
 
 pub type Analysis = (AbstractCache, AbstractEnv);
 
-pub fn add(
+fn add(
     index: &ConSet,
-    term: &HashSet<Term>,
-    data: &mut HashMap<ConSet, HashSet<Term>>,
+    terms: HashSet<Term>,
+    node_data: &mut HashMap<ConSet, HashSet<Term>>,
     work_list: &mut Vec<ConSet>,
 ) {
-    todo!()
+    if !terms.is_subset(&node_data[index]) {
+        node_data.get_mut(index).unwrap().extend(terms);
+        work_list.insert(0, index.clone());
+    }
 }
 
 pub fn analyse(expr: &Expression) -> (AbstractCache, AbstractEnv) {
@@ -47,7 +50,7 @@ pub fn analyse(expr: &Expression) -> (AbstractCache, AbstractEnv) {
             Unconditional(p1, p2) => match p1 {
                 SingleTerm(t) => add(
                     p2,
-                    &HashSet::from([t.clone()]),
+                    HashSet::from([t.clone()]),
                     &mut node_data,
                     &mut work_list,
                 ),
@@ -73,7 +76,7 @@ pub fn analyse(expr: &Expression) -> (AbstractCache, AbstractEnv) {
                 Unconditional(p1, p2) => {
                     add(
                         p2,
-                        &node_data.get(p1).unwrap().clone(),
+                        node_data.get(p1).unwrap().clone(),
                         &mut node_data,
                         &mut work_list,
                     );
@@ -81,7 +84,7 @@ pub fn analyse(expr: &Expression) -> (AbstractCache, AbstractEnv) {
 
                 Conditional((t, p), p1, p2) => {
                     if node_data[p].contains(t) {
-                        add(p2, &node_data[p1].clone(), &mut node_data, &mut work_list)
+                        add(p2, node_data[p1].clone(), &mut node_data, &mut work_list)
                     }
                 }
             }
