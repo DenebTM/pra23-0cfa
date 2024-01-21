@@ -132,10 +132,16 @@ impl Expression {
             }
 
             Term::Application(e1, e2) => top_expr.subterms().iter().for_each(|&t| {
+                constraints.extend(e1.constr(top_expr));
+                constraints.extend(e2.constr(top_expr));
                 if let Term::Closure(x, e0) | Term::RecursiveClosure(x, _, e0) = t {
                     constraints.extend([
                         Conditional((t.clone(), Cache(e1.label)), Cache(e2.label), Env(*x)),
-                        Conditional((t.clone(), Cache(e1.label)), Cache(e0.label), Env(*x)),
+                        Conditional(
+                            (t.clone(), Cache(e1.label)),
+                            Cache(e0.label),
+                            Cache(self.label),
+                        ),
                     ]);
                 }
             }),
