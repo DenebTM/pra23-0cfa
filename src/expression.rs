@@ -1,6 +1,8 @@
-use std::collections::HashSet;
+use fmtastic::Superscript;
+use std::{collections::HashSet, fmt::Display};
 
 use crate::{
+    constraint::{ConSet, Constraint},
     term::Term,
     types::{Label, Variable},
 };
@@ -9,19 +11,6 @@ use crate::{
 pub struct Expression {
     pub label: usize,
     pub term: Term,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum ConSet {
-    Cache(Label),
-    Env(Variable),
-    SingleTerm(Term),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Constraint {
-    Unconditional(ConSet, ConSet),
-    Conditional((Term, ConSet), ConSet, ConSet),
 }
 
 impl Expression {
@@ -33,7 +22,7 @@ impl Expression {
         let mut variables = HashSet::new();
 
         match &self.term {
-            Term::Constant => {}
+            Term::Constant(_) => {}
 
             Term::Variable(x) => {
                 variables.insert(*x);
@@ -114,7 +103,7 @@ impl Expression {
         use ConSet::*;
         use Constraint::*;
         match &self.term {
-            Term::Constant => {}
+            Term::Constant(_) => {}
 
             Term::Variable(x) => {
                 constraints.insert(Unconditional(Env(*x), Cache(self.label)));
@@ -177,5 +166,20 @@ impl Expression {
         }
 
         constraints
+    }
+}
+
+impl Display for Expression {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let use_parens = !matches!(self.term, Term::Constant(_) | Term::Variable(_));
+
+        let inner = &self.term;
+        let label = Superscript(self.label);
+
+        if use_parens {
+            write!(f, "({inner}){label}")
+        } else {
+            write!(f, "{inner}{label}")
+        }
     }
 }

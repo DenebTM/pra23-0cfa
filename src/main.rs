@@ -1,6 +1,7 @@
 use std::{env, io};
 
 mod analysis;
+mod constraint;
 mod expression;
 mod term;
 mod types;

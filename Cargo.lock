@@ -47,6 +47,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "fmtastic"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01e0788fd5d05fe28fb0a37654ac8ef55c2a069bb9e4e5ec5361de87f8f3a8dc"
+
+[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -207,6 +213,7 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 name = "zerocfa"
 version = "0.1.0"
 dependencies = [
+ "fmtastic",
  "pest",
  "pest_derive",
 ]

@@ -1,7 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::{
-    expression::{ConSet, Constraint, Expression},
+    constraint::{ConSet, Constraint},
+    expression::Expression,
     term::Term,
     types::{Label, Variable},
 };
