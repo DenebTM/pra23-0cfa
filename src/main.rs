@@ -3,6 +3,8 @@ use std::{env, io};
 use expression::Expression;
 use term::Term;
 
+use crate::analysis::analyse;
+
 mod analysis;
 mod constraint;
 mod expression;
@@ -55,8 +57,50 @@ fn main() {
     };
     println!("Program: {program}");
 
-    println!("Constraints:");
+    let labels = {
+        let labels_unsorted = program.labels();
+        let mut vec = Vec::from_iter(labels_unsorted);
+        vec.sort();
+        vec
+    };
+    let variables = {
+        let variables_unsorted = program.variables();
+        let mut vec = Vec::from_iter(variables_unsorted);
+        vec.sort();
+        vec
+    };
+
+    println!("\nConstraints:");
     for constraint in program.constraints() {
         println!("  {constraint}");
     }
+
+    println!("\nAnalysis:");
+    let (analysis_cache, analysis_env) = analyse(&program);
+    for label in labels {
+        let terms = analysis_cache[&label]
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>();
+
+        println!(
+            "  {rowlabel:<7} {}",
+            terms.join(", "),
+            rowlabel = format!("C({label}):")
+        );
+    }
+    println!();
+    for variable in variables {
+        let terms = analysis_env[&variable]
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>();
+
+        println!(
+            "  {rowlabel:<7} {}",
+            terms.join(", "),
+            rowlabel = format!("r({variable}):")
+        );
+    }
+    println!();
 }
