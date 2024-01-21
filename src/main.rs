@@ -76,9 +76,9 @@ fn main() {
         return;
     }
 
-    // parsed successfully -> proceed
+    // parsed successfully -> proceed with analysis
     let program = program.unwrap();
-    println!("Program: {program}");
+    println!("\nProgram: {program}");
 
     let labels = {
         let labels_unsorted = program.labels();

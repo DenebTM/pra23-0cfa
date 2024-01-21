@@ -11,7 +11,7 @@ fn expr(term: Term) -> Box<Expression> {
 
 peg::parser!(grammar func() for str {
     rule __ = [' ' | '\n']+
-    rule _ = __?
+    rule _  = [' ' | '\n']*
     rule ws_or_eof() = &(_ / ![_])
     rule alpha() -> char = ['a'..='z' | 'A'..='Z']
     rule digit() -> char = ['0'..='9']
@@ -43,40 +43,30 @@ peg::parser!(grammar func() for str {
             Term::Let(x, expr(t1), expr(t2))
         }
 
-    rule binary_op() -> Term = precedence!{
-        x:(@) _ "<"  _ y:@ { Term::BinaryOp(expr(x), "<" .to_string(), expr(y)) }
-        x:(@) _ "<=" _ y:@ { Term::BinaryOp(expr(x), "<=".to_string(), expr(y)) }
-        x:(@) _ "==" _ y:@ { Term::BinaryOp(expr(x), "==".to_string(), expr(y)) }
-        x:(@) _ "!=" _ y:@ { Term::BinaryOp(expr(x), "!=".to_string(), expr(y)) }
-        x:(@) _ ">=" _ y:@ { Term::BinaryOp(expr(x), ">=".to_string(), expr(y)) }
-        x:(@) _ ">"  _ y:@ { Term::BinaryOp(expr(x), ">" .to_string(), expr(y)) }
-        --
-        x:(@) _ "+" _ y:@ { Term::BinaryOp(expr(x), "+".to_string(), expr(y)) }
-        x:(@) _ "-" _ y:@ { Term::BinaryOp(expr(x), "-".to_string(), expr(y)) }
-        --
-        x:(@) _ "*" _ y:@ { Term::BinaryOp(expr(x), "*".to_string(), expr(y)) }
-        x:(@) _ "/" _ y:@ { Term::BinaryOp(expr(x), "/".to_string(), expr(y)) }
-        --
-        x:(@) _ "^" _ y:@ { Term::BinaryOp(expr(x), "^".to_string(), expr(y)) }
-        --
-        n:constant() { Term::Constant(n) }
-        v:variable() { Term::Variable(v) }
-        "(" b:binary_op() ")" { b }
-    }
-
-    #[cache_left_rec]
     pub rule term() -> Term
         = _ t:precedence!{
                 l:let() { l }
                 --
                 i:if_then_else() { i }
                 --
-                t1:@ _ t2:(@) { Term::Application(expr(t1), expr(t2)) }
+                t1:@ __ t2:(@) { Term::Application(expr(t1), expr(t2)) }
                 --
                 c:closure() { c }
                 r:recursive_closure() { r }
                 --
-                b:binary_op() { b }
+                x:(@) _ op:$("||")  _ y:@ { Term::BinaryOp(expr(x), op.to_string(), expr(y)) }
+                --
+                x:(@) _ op:$("&&")  _ y:@ { Term::BinaryOp(expr(x), op.to_string(), expr(y)) }
+                --
+                x:(@) _ op:$("<=" / "==" / "!=" / ">=")  _ y:@ { Term::BinaryOp(expr(x), op.to_string(), expr(y)) }
+                x:(@) _ op:$("<" / ">")  _ y:@ { Term::BinaryOp(expr(x), op.to_string(), expr(y)) }
+                --
+                x:(@) _ op:['+' | '-'] _ y:@ { Term::BinaryOp(expr(x), op.to_string(), expr(y)) }
+                --
+                x:(@) _ op:['*' | '/'] _ y:@ { Term::BinaryOp(expr(x), op.to_string(), expr(y)) }
+                --
+                n:constant() { Term::Constant(n) }
+                v:variable() { Term::Variable(v) }
                 --
                 "(" _ t:term() _ ")" { t }
             }
