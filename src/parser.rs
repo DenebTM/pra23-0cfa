@@ -172,7 +172,7 @@ fn relabel(expr: Expression, start: Label) -> (Expression, Label) {
 }
 
 pub fn parse(input: &str) -> Result<Expression, ParseError<LineCol>> {
-    let term = func::term(input)?;
+    let term = func::term(input.trim_end())?;
 
     Ok(relabel(*expr(term), 1).0)
 }
