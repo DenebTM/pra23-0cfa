@@ -1,95 +1,101 @@
-use std::{
-    collections::{HashMap, HashSet},
-    ops::Sub,
-};
+use std::collections::{BTreeSet, HashMap};
 
 use crate::{
-    block::{AssignmentBlock, Block, TestBlock},
-    expression::{Label, Variable},
-    program::Program,
+    expression::Expression,
+    term::Term,
+    types::{Label, Variable},
 };
 
-pub fn gen_lv(block: Block) -> HashSet<Variable> {
-    match block {
-        Block::Assignment(AssignmentBlock { expr, .. }) => expr.free_vars(),
-        Block::Test(TestBlock { expr, .. }) => expr.free_vars(),
-        Block::Skip(_) => [].into(),
-    }
+type AbstractCache = HashMap<Label, BTreeSet<Term>>;
+type AbstractEnv = HashMap<Variable, BTreeSet<Term>>;
+
+type Analysis = (AbstractCache, AbstractEnv);
+
+type ConstraintLhs = BTreeSet<Term>;
+type ConstraintRhs = BTreeSet<Term>;
+type Constraint = (ConstraintLhs, ConstraintRhs);
+
+fn subexprs() -> BTreeSet<Term> {
+    todo!()
 }
 
-pub fn kill_lv(block: Block) -> HashSet<Variable> {
-    match block {
-        Block::Assignment(AssignmentBlock { var, .. }) => [var].into(),
-        Block::Test(TestBlock { .. }) => [].into(),
-        Block::Skip(_) => [].into(),
-    }
-}
+pub fn constr(expr: &Expression, cache: &AbstractCache, env: &AbstractEnv) -> BTreeSet<Constraint> {
+    match &expr.term {
+        Term::Constant => [].into(),
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct LVAnalysis {
-    pub exit: LVExit,
-    pub entry: LVEntry,
-}
-impl LVAnalysis {
-    pub fn new(label_count: usize) -> Self {
-        Self {
-            exit: (1..=label_count)
-                .map(|label| (label, HashSet::new()))
-                .collect(),
-            entry: (1..=label_count)
-                .map(|label| (label, HashSet::new()))
-                .collect(),
-        }
-    }
-}
+        Term::Variable(x) => [(env[x].clone(), cache[&expr.label].clone())].into(),
 
-pub type LVExitAtLabel = HashSet<Variable>;
-pub type LVExit = HashMap<Label, HashSet<Variable>>;
-pub type LVEntryAtLabel = HashSet<Variable>;
-pub type LVEntry = HashMap<Label, HashSet<Variable>>;
-
-/// return the LVExit' mapping based on LVEntry
-pub fn lv_exit(program: &Program, lv_entry: &LVEntry) -> LVExit {
-    (1..=program.len)
-        .map(|label| (label, lv_exit_at(program, lv_entry, label)))
-        .collect()
-}
-
-/// return LVExit'(l) based on LVEntry
-pub fn lv_exit_at(program: &Program, lv_entry: &LVEntry, label: Label) -> LVExitAtLabel {
-    assert!(
-        program.at(label) != None,
-        "Label '{}' does not exist in program",
-        label
-    );
-
-    if program.final_labels().contains(&label) {
-        HashSet::new()
-    } else {
-        program
-            .flow_r()
-            .iter()
-            .filter(|(_, l)| l == &label)
-            .map(|(l_prime, _)| lv_entry[l_prime].clone())
-            .flatten()
-            .collect()
-    }
-}
-
-/// return the LVEntry' mapping based on LVExit
-pub fn lv_entry(program: &Program, lv_exit: &LVExit) -> LVExit {
-    (1..=program.len)
-        .map(|label| (label, lv_entry_at(program, lv_exit, label)))
-        .collect()
-}
-
-/// return LVEntry'(l) based on LVExit
-pub fn lv_entry_at(program: &Program, lv_exit: &LVExit, label: Label) -> LVEntryAtLabel {
-    let block = program.at(label).unwrap();
-
-    lv_exit[&label]
-        .sub(&kill_lv(block.clone()))
-        .union(&gen_lv(block))
+        Term::Closure(x, e0) => BTreeSet::from([(
+            BTreeSet::from([Term::Closure(*x, e0.clone())]),
+            cache[&expr.label].clone(),
+        )])
+        .union(&constr(e0, cache, env))
         .cloned()
-        .collect()
+        .collect(),
+
+        Term::RecursiveClosure(x, f, e0) => BTreeSet::from([
+            (
+                BTreeSet::from([Term::RecursiveClosure(*x, *f, e0.clone())]),
+                cache[&expr.label].clone(),
+            ),
+            (
+                BTreeSet::from([Term::RecursiveClosure(*x, *f, e0.clone())]),
+                env[x].clone(),
+            ),
+        ])
+        .union(&constr(e0, cache, env))
+        .cloned()
+        .collect(),
+
+        Term::Application(e1, e2) => subexprs()
+            .iter()
+            .map(|t| match t {
+                Term::Closure(x, subexpr) | Term::RecursiveClosure(x, _, subexpr) => {
+                    if cache[&e1.label].contains(t) {
+                        Some(BTreeSet::from([
+                            (cache[&e2.label].clone(), env[x].clone()),
+                            (cache[&subexpr.label].clone(), cache[&expr.label].clone()),
+                        ]))
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            })
+            .flatten()
+            .flatten()
+            .collect(),
+
+        Term::IfThenElse(e0, e1, e2) => [
+            constr(e0, cache, env),
+            constr(e1, cache, env),
+            constr(e2, cache, env),
+            BTreeSet::from([
+                (cache[&e1.label].clone(), cache[&expr.label].clone()),
+                (cache[&e2.label].clone(), cache[&expr.label].clone()),
+            ]),
+        ]
+        .iter()
+        .flatten()
+        .cloned()
+        .collect(),
+
+        Term::Let(x, e1, e2) => [
+            constr(e1, cache, env),
+            constr(e2, cache, env),
+            BTreeSet::from([
+                (cache[&e1.label].clone(), env[x].clone()),
+                (cache[&e2.label].clone(), cache[&expr.label].clone()),
+            ]),
+        ]
+        .iter()
+        .flatten()
+        .cloned()
+        .collect(),
+
+        Term::BinaryOp(e1, _, e2) => constr(e1, cache, env)
+            .union(&constr(e2, cache, env))
+            .cloned()
+            .collect(),
+    }
 }
