@@ -10,7 +10,8 @@ fn expr(term: Term) -> Box<Expression> {
 }
 
 peg::parser!(grammar func() for str {
-    rule _ = [' ' | '\n']*
+    rule __ = [' ' | '\n']+
+    rule _ = __?
     rule ws_or_eof() = &(_ / ![_])
     rule alpha() -> char = ['a'..='z' | 'A'..='Z']
     rule digit() -> char = ['0'..='9']
@@ -23,22 +24,22 @@ peg::parser!(grammar func() for str {
         = !keyword() x:alpha() ws_or_eof() { x }
 
     rule closure() -> Term
-        = "fn" _ x:variable() _ "->" _ t:term() {
+        = "fn" __ x:variable() _ "->" _ t:term() {
             Term::Closure(x, expr(t))
         }
 
     rule recursive_closure() -> Term
-        = "fun" _ f:variable() _ x:variable() _ "->" _ t:term() {
+        = "fun" __ f:variable() _ x:variable() _ "->" _ t:term() {
             Term::RecursiveClosure(f, x, expr(t))
         }
 
     rule if_then_else() -> Term
-        = "if" t0:term() _ "then" _ t1:term() _ "else" _ t2:term() {
+        = "if" __ t0:term() __ "then" _ t1:term() __ "else" __ t2:term() {
             Term::IfThenElse(expr(t0), expr(t1), expr(t2))
         }
 
     rule let() -> Term
-        = "let" _ x:variable() _ "=" _ t1:term() _ "in" _ t2:term() {
+        = "let" __ x:variable() _ "=" _ t1:term() __ "in" __ t2:term() {
             Term::Let(x, expr(t1), expr(t2))
         }
 
@@ -79,7 +80,7 @@ peg::parser!(grammar func() for str {
                 --
                 "(" _ t:term() _ ")" { t }
             }
-        _ { t }
+        { t }
 });
 
 fn relabel(expr: Expression, start: Label) -> (Expression, Label) {
