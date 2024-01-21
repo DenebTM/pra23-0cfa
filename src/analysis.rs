@@ -46,82 +46,65 @@ pub fn constr(
     env: &AbstractEnv,
     top_expr: &Expression,
 ) -> BTreeSet<Constraint> {
+    let mut constraints: BTreeSet<Constraint> = BTreeSet::new();
+
     match &expr.term {
-        Term::Constant => [].into(),
+        Term::Constant => {}
 
-        Term::Variable(x) => [(env[x].clone(), cache[&expr.label].clone())].into(),
+        Term::Variable(x) => {
+            constraints.insert((env[x].clone(), cache[&expr.label].clone()));
+        }
 
-        Term::Closure(x, e0) => BTreeSet::from([(
-            BTreeSet::from([Term::Closure(*x, e0.clone())]),
-            cache[&expr.label].clone(),
-        )])
-        .union(&constr(e0, cache, env, top_expr))
-        .cloned()
-        .collect(),
+        Term::Closure(x, e0) => {
+            constraints.insert((
+                BTreeSet::from([Term::Closure(*x, e0.clone())]),
+                cache[&expr.label].clone(),
+            ));
 
-        Term::RecursiveClosure(x, f, e0) => BTreeSet::from([
-            (
+            constraints.append(&mut constr(e0, cache, env, top_expr));
+        }
+
+        Term::RecursiveClosure(x, f, e0) => {
+            constraints.insert((
                 BTreeSet::from([Term::RecursiveClosure(*x, *f, e0.clone())]),
                 cache[&expr.label].clone(),
-            ),
-            (
+            ));
+            constraints.insert((
                 BTreeSet::from([Term::RecursiveClosure(*x, *f, e0.clone())]),
                 env[x].clone(),
-            ),
-        ])
-        .union(&constr(e0, cache, env, top_expr))
-        .cloned()
-        .collect(),
+            ));
+            constraints.append(&mut constr(e0, cache, env, top_expr));
+        }
 
-        Term::Application(e1, e2) => subterms(top_expr)
-            .iter()
-            .map(|t| match t {
-                Term::Closure(x, e0) | Term::RecursiveClosure(x, _, e0) => {
-                    if cache[&e1.label].contains(t) {
-                        Some(BTreeSet::from([
-                            (cache[&e2.label].clone(), env[x].clone()),
-                            (cache[&e0.label].clone(), cache[&expr.label].clone()),
-                        ]))
-                    } else {
-                        None
-                    }
+        Term::Application(e1, e2) => subterms(top_expr).iter().for_each(|t| {
+            if let Term::Closure(x, e0) | Term::RecursiveClosure(x, _, e0) = t {
+                if cache[&e1.label].contains(t) {
+                    constraints.insert((cache[&e2.label].clone(), env[x].clone()));
+                    constraints.insert((cache[&e0.label].clone(), cache[&expr.label].clone()));
                 }
-                _ => None,
-            })
-            .flatten()
-            .flatten()
-            .collect(),
+            }
+        }),
 
-        Term::IfThenElse(e0, e1, e2) => [
-            constr(e0, cache, env, top_expr),
-            constr(e1, cache, env, top_expr),
-            constr(e2, cache, env, top_expr),
-            BTreeSet::from([
-                (cache[&e1.label].clone(), cache[&expr.label].clone()),
-                (cache[&e2.label].clone(), cache[&expr.label].clone()),
-            ]),
-        ]
-        .iter()
-        .flatten()
-        .cloned()
-        .collect(),
+        Term::IfThenElse(e0, e1, e2) => {
+            constraints.append(&mut constr(e0, cache, env, top_expr));
+            constraints.append(&mut constr(e1, cache, env, top_expr));
+            constraints.append(&mut constr(e2, cache, env, top_expr));
+            constraints.insert((cache[&e1.label].clone(), cache[&expr.label].clone()));
+            constraints.insert((cache[&e2.label].clone(), cache[&expr.label].clone()));
+        }
 
-        Term::Let(x, e1, e2) => [
-            constr(e1, cache, env, top_expr),
-            constr(e2, cache, env, top_expr),
-            BTreeSet::from([
-                (cache[&e1.label].clone(), env[x].clone()),
-                (cache[&e2.label].clone(), cache[&expr.label].clone()),
-            ]),
-        ]
-        .iter()
-        .flatten()
-        .cloned()
-        .collect(),
+        Term::Let(x, e1, e2) => {
+            constraints.append(&mut constr(e1, cache, env, top_expr));
+            constraints.append(&mut constr(e2, cache, env, top_expr));
+            constraints.insert((cache[&e1.label].clone(), env[x].clone()));
+            constraints.insert((cache[&e2.label].clone(), cache[&expr.label].clone()));
+        }
 
-        Term::BinaryOp(e1, _, e2) => constr(e1, cache, env, top_expr)
-            .union(&constr(e2, cache, env, top_expr))
-            .cloned()
-            .collect(),
+        Term::BinaryOp(e1, _, e2) => {
+            constraints.append(&mut constr(e1, cache, env, top_expr));
+            constraints.append(&mut constr(e2, cache, env, top_expr));
+        }
     }
+
+    constraints
 }
