@@ -25,33 +25,87 @@ pub enum Constraint {
 }
 
 impl Expression {
+    pub fn labels(&self) -> HashSet<Label> {
+        self.subexprs().iter().map(|e| e.label).collect()
+    }
+
+    pub fn variables(&self) -> HashSet<Variable> {
+        let mut variables = HashSet::new();
+
+        match &self.term {
+            Term::Constant => {}
+
+            Term::Variable(x) => {
+                variables.insert(*x);
+            }
+
+            Term::Closure(x, e0) => {
+                variables.insert(*x);
+                variables.extend(e0.variables());
+            }
+
+            Term::RecursiveClosure(x, f, e0) => {
+                variables.extend([x, f]);
+                variables.extend(e0.variables());
+            }
+
+            Term::Application(e1, e2) => {
+                variables.extend(e1.variables());
+                variables.extend(e2.variables());
+            }
+
+            Term::IfThenElse(e0, e1, e2) => {
+                variables.extend(e0.variables());
+                variables.extend(e1.variables());
+                variables.extend(e2.variables());
+            }
+
+            Term::Let(x, e1, e2) => {
+                variables.insert(*x);
+                variables.extend(e1.variables());
+                variables.extend(e2.variables());
+            }
+
+            Term::BinaryOp(e1, _, e2) => {
+                variables.extend(e1.variables());
+                variables.extend(e2.variables());
+            }
+        }
+
+        variables
+    }
+
     pub fn constraints(&self) -> HashSet<Constraint> {
         self.constr(&self)
     }
 
-    fn subterms(&self) -> HashSet<Term> {
-        let mut terms = HashSet::from([self.term.clone()]);
+    fn subexprs(&self) -> HashSet<&Expression> {
+        let mut expressions = HashSet::from([self]);
 
         match &self.term {
             Term::Closure(_, e0) | Term::RecursiveClosure(_, _, e0) => {
-                terms.extend(e0.subterms());
+                expressions.extend(e0.subexprs());
             }
 
             Term::Application(e1, e2) | Term::Let(_, e1, e2) | Term::BinaryOp(e1, _, e2) => {
-                terms.extend(e1.subterms());
-                terms.extend(e2.subterms());
+                expressions.extend(e1.subexprs());
+                expressions.extend(e2.subexprs());
             }
 
             Term::IfThenElse(e0, e1, e2) => {
-                terms.extend(e0.subterms());
-                terms.extend(e1.subterms());
-                terms.extend(e2.subterms());
+                expressions.extend(e0.subexprs());
+                expressions.extend(e1.subexprs());
+                expressions.extend(e2.subexprs());
             }
 
             _ => {}
         }
 
-        terms
+        expressions
+    }
+
+    fn subterms(&self) -> HashSet<&Term> {
+        self.subexprs().iter().map(|e| &e.term).collect()
     }
 
     fn constr(&self, top_expr: &Expression) -> HashSet<Constraint> {
@@ -88,7 +142,7 @@ impl Expression {
                 constraints.extend(e0.constr(top_expr));
             }
 
-            Term::Application(e1, e2) => top_expr.subterms().iter().for_each(|t| {
+            Term::Application(e1, e2) => top_expr.subterms().iter().for_each(|&t| {
                 if let Term::Closure(x, e0) | Term::RecursiveClosure(x, _, e0) = t {
                     constraints.extend([
                         Conditional((t.clone(), Cache(e1.label)), Cache(e2.label), Env(*x)),
