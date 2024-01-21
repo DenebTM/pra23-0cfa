@@ -17,75 +17,68 @@ peg::parser!(grammar func() for str {
 
     rule constant() -> Constant
         = n:$("-"? digit()+) {? n.parse().or(Err("i32")) }
-        / "(" _ c:constant() _ ")" { c }
 
     rule variable() -> Variable
         = x:alpha() { x }
-        / "(" _ v:variable() _ ")" { v }
 
     rule closure() -> Term
         = "fn" _ x:variable() _ "->" _ t:term() {
             Term::Closure(x, expr(t))
         }
-        / "(" _ c:closure() _ ")" { c }
 
     rule recursive_closure() -> Term
         = "fun" _ f:variable() _ x:variable() _ "->" _ t:term() {
             Term::RecursiveClosure(f, x, expr(t))
         }
-        / "(" _ r:recursive_closure() _ ")" { r }
-
-    #[cache_left_rec]
-    rule application() -> Term
-        = t1:term() _ t2:term() { Term::Application(expr(t1), expr(t2)) }
-        / "(" _ a:application() _ ")" { a }
 
     rule if_then_else() -> Term
         = "if" t0:term() _ "then" _ t1:term() _ "else" _ t2:term() {
             Term::IfThenElse(expr(t0), expr(t1), expr(t2))
         }
-        / "(" _ i:if_then_else() _ ")" { i }
 
     rule let() -> Term
         = "let" _ x:variable() _ "=" _ t1:term() _ "in" _ t2:term() {
             Term::Let(x, expr(t1), expr(t2))
         }
-        / "(" _ l:let() _ ")" { l }
 
-    #[cache_left_rec]
-    rule add_sub() -> Term
-        = t1:term() _ op:['+' | '-'] _ t2:term() { Term::BinaryOp(expr(t1), op, expr(t2)) }
-
-    #[cache_left_rec]
-    rule mul_div() -> Term
-        = t1:term() _ op:['*' | '/'] _ t2:term() { Term::BinaryOp(expr(t1), op, expr(t2)) }
-
-    rule binary_op() -> Term = precedence!{
-        x:(@) _ op:['+' | '-'] _ y:@ { Term::BinaryOp(expr(x), op, expr(y)) }
+    rule abexp() -> Term = precedence!{
+        x:(@) _ "<"  _ y:@ { Term::BinaryOp(expr(x), "<" .to_string(), expr(y)) }
+        x:(@) _ "<=" _ y:@ { Term::BinaryOp(expr(x), "<=".to_string(), expr(y)) }
+        x:(@) _ "==" _ y:@ { Term::BinaryOp(expr(x), "==".to_string(), expr(y)) }
+        x:(@) _ "!=" _ y:@ { Term::BinaryOp(expr(x), "!=".to_string(), expr(y)) }
+        x:(@) _ ">=" _ y:@ { Term::BinaryOp(expr(x), ">=".to_string(), expr(y)) }
+        x:(@) _ ">"  _ y:@ { Term::BinaryOp(expr(x), ">" .to_string(), expr(y)) }
         --
-        x:(@) _ op:['*' | '/'] _ y:@ { Term::BinaryOp(expr(x), op, expr(y)) }
+        x:(@) _ "+" _ y:@ { Term::BinaryOp(expr(x), "+".to_string(), expr(y)) }
+        x:(@) _ "-" _ y:@ { Term::BinaryOp(expr(x), "-".to_string(), expr(y)) }
         --
-        x:(@) _ op:['^'] _ y:@ { Term::BinaryOp(expr(x), op, expr(y)) }
+        x:(@) _ "*" _ y:@ { Term::BinaryOp(expr(x), "*".to_string(), expr(y)) }
+        x:(@) _ "/" _ y:@ { Term::BinaryOp(expr(x), "/".to_string(), expr(y)) }
+        --
+        x:(@) _ "^" _ y:@ { Term::BinaryOp(expr(x), "^".to_string(), expr(y)) }
         --
         n:constant() { Term::Constant(n) }
         v:variable() { Term::Variable(v) }
-        "(" e:binary_op() ")" { e }
+        "(" b:abexp() ")" { b }
     }
 
     #[cache_left_rec]
     pub rule term() -> Term
-        = _ t:(
-            t:(
-                closure()
-                / recursive_closure()
-
-                / application()
-                / if_then_else()
-                / let()
-
-                / binary_op()
-            ) { t }
-        ) _? { t }
+        = _ t:precedence!{
+                l:let() { l }
+                --
+                i:if_then_else() { i }
+                --
+                t1:@ _ t2:(@) { Term::Application(expr(t1), expr(t2)) }
+                --
+                c:closure() { c }
+                r:recursive_closure() { r }
+                --
+                b:abexp() { b }
+                --
+                "(" t:term() ")" { t }
+            }
+        _? { t }
 });
 
 fn relabel(expr: Expression, start: Label) -> (Expression, Label) {
