@@ -2,12 +2,12 @@ use std::fmt::Display;
 
 use crate::{
     expression::Expression,
-    types::{Operator, Variable},
+    types::{Constant, Operator, Variable},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Term {
-    Constant(i32),
+    Constant(Constant),
     Variable(Variable),
     Closure(Variable, Box<Expression>),
     RecursiveClosure(Variable, Variable, Box<Expression>),
