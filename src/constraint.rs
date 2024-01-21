@@ -30,7 +30,11 @@ pub enum Constraint {
 
 impl Display for Constraint {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        //
-        todo!()
+        match self {
+            Self::Unconditional(lhs, rhs) => write!(f, "{lhs} ⊆ {rhs}"),
+            Self::Conditional((t, rhs_), lhs, rhs) => {
+                write!(f, "{{{t}}} ⊆ {rhs_} => {lhs} ⊆ {rhs}")
+            }
+        }
     }
 }
