@@ -36,7 +36,8 @@ impl Display for Term {
                                                                                                                          {pad:sublevel$}else {e2:#subsublevel$}", pad=""),
                 Self::Let(x, e1, e2) => write!(formatter, "let {x} = {e1:#sublevel$} \n\
                                                                                                       {pad:sublevel$}in {e2:#subsublevel$}", pad=""),
-                Self::BinaryOp(e1, op, e2) => write!(formatter, "{e1:#sublevel$} {op} {e2:#sublevel$}"),
+                Self::BinaryOp(e1, op, e2) => write!(formatter, "{e1:#level$} {op}\n\
+                                                                                                              {pad:level$}{e2:#level$}", pad=""),
             }
             // )
         } else {

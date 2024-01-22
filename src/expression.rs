@@ -187,13 +187,17 @@ impl Display for Expression {
             let level = f.width().unwrap_or(0);
 
             if f.alternate() && unpretty.len() + level >= 80 {
-                write!(
-                    f,
-                    "({inner:#level$}\n\
+                if matches!(self.term, Term::IfThenElse(_, _, _) | Term::Let(_, _, _)) {
+                    write!(
+                        f,
+                        "({inner:#level$}\n\
                     {pad:prev_level$}){label}",
-                    pad = "",
-                    prev_level = if level >= 4 { level - 4 } else { 0 }
-                )
+                        pad = "",
+                        prev_level = if level >= 4 { level - 4 } else { 0 }
+                    )
+                } else {
+                    write!(f, "({inner:#level$}){label}",)
+                }
             } else {
                 write!(f, "{unpretty}")
             }
