@@ -23,8 +23,6 @@ impl Display for Term {
             let level = formatter.width().unwrap_or(0);
             let sublevel = level + 4;
             let subsublevel = level + 8;
-            // write!(formatter, "{pad:level$}", pad = "")
-            // .and(
             match self {
                 Self::Constant(c) => write!(formatter, "{c}"),
                 Self::Variable(x) => write!(formatter, "{x}"),
@@ -33,13 +31,12 @@ impl Display for Term {
                 Self::Application(e1, e2) => write!(formatter, "{e1:#sublevel$} {e2:#sublevel$}"),
                 Self::IfThenElse(e0, e1, e2) => write!(formatter, "if {e0:#sublevel$}\n\
                                                                                                                          {pad:sublevel$}then {e1:#subsublevel$}\n\
-                                                                                                                         {pad:sublevel$}else {e2:#subsublevel$}", pad=""),
+                                                                                                                         {pad:sublevel$}else {e2:#subsublevel$}", pad = ""),
                 Self::Let(x, e1, e2) => write!(formatter, "let {x} = {e1:#sublevel$} \n\
-                                                                                                      {pad:sublevel$}in {e2:#subsublevel$}", pad=""),
+                                                                                                      {pad:sublevel$}in {e2:#subsublevel$}", pad = ""),
                 Self::BinaryOp(e1, op, e2) => write!(formatter, "{e1:#level$} {op}\n\
-                                                                                                              {pad:level$}{e2:#level$}", pad=""),
+                                                                                                              {pad:level$}{e2:#level$}", pad = ""),
             }
-            // )
         } else {
             match self {
                 Self::Constant(c) => write!(formatter, "{c}"),
