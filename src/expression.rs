@@ -183,7 +183,20 @@ impl Display for Expression {
         let label = Superscript(self.label);
 
         if use_parens {
-            write!(f, "({inner}){label}")
+            let unpretty = format!("({inner}){label}");
+            let level = f.width().unwrap_or(0);
+
+            if f.alternate() && unpretty.len() + level >= 80 {
+                write!(
+                    f,
+                    "({inner:#level$}\n\
+                    {pad:prev_level$}){label}",
+                    pad = "",
+                    prev_level = if level >= 4 { level - 4 } else { 0 }
+                )
+            } else {
+                write!(f, "{unpretty}")
+            }
         } else {
             write!(f, "{inner}{label}")
         }
