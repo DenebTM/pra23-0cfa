@@ -114,6 +114,7 @@ impl Expression {
                     SingleTerm(self.term.clone()),
                     Cache(self.label),
                 ));
+
                 constraints.extend(e0.constr(subterms));
             }
 
@@ -122,28 +123,33 @@ impl Expression {
                     Unconditional(SingleTerm(self.term.clone()), Cache(self.label)),
                     Unconditional(SingleTerm(self.term.clone()), Env(*x)),
                 ]);
+
                 constraints.extend(e0.constr(subterms));
             }
 
-            Term::Application(e1, e2) => subterms.iter().for_each(|&t| {
+            Term::Application(e1, e2) => {
                 constraints.extend(e1.constr(subterms));
                 constraints.extend(e2.constr(subterms));
-                if let Term::Closure(x, e0) | Term::RecursiveClosure(x, _, e0) = t {
-                    constraints.extend([
-                        Conditional((t.clone(), Cache(e1.label)), Cache(e2.label), Env(*x)),
-                        Conditional(
-                            (t.clone(), Cache(e1.label)),
-                            Cache(e0.label),
-                            Cache(self.label),
-                        ),
-                    ]);
-                }
-            }),
+
+                subterms.iter().for_each(|&t| {
+                    if let Term::Closure(x, e0) | Term::RecursiveClosure(x, _, e0) = t {
+                        constraints.extend([
+                            Conditional((t.clone(), Cache(e1.label)), Cache(e2.label), Env(*x)),
+                            Conditional(
+                                (t.clone(), Cache(e1.label)),
+                                Cache(e0.label),
+                                Cache(self.label),
+                            ),
+                        ]);
+                    }
+                });
+            }
 
             Term::IfThenElse(e0, e1, e2) => {
                 constraints.extend(e0.constr(subterms));
                 constraints.extend(e1.constr(subterms));
                 constraints.extend(e2.constr(subterms));
+
                 constraints.extend([
                     Unconditional(Cache(e1.label), Cache(self.label)),
                     Unconditional(Cache(e2.label), Cache(self.label)),
@@ -153,6 +159,7 @@ impl Expression {
             Term::Let(x, e1, e2) => {
                 constraints.extend(e1.constr(subterms));
                 constraints.extend(e2.constr(subterms));
+
                 constraints.extend([
                     Unconditional(Cache(e1.label), Env(*x)),
                     Unconditional(Cache(e2.label), Cache(self.label)),
