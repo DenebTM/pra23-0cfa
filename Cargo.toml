@@ -8,8 +8,7 @@ edition = "2021"
 
 [dependencies]
 fmtastic = "0.1.0"
-peg = "0.8.2"
-pest_derive = "2.7.5"
+peg = { version = "0.8.2" }
 rustyline = { version = "13.0.0", default-features = false }
 
 [profile.release]
