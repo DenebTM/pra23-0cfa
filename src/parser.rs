@@ -24,12 +24,12 @@ peg::parser!(grammar func() for str {
         = !keyword() x:alpha() ws_or_eof() { x }
 
     rule closure() -> Term
-        = "fn" __ x:variable() _ "->" _ t:term() {
+        = "fn" __ x:variable() _ ("->" / "=>") _ t:term() {
             Term::Closure(x, expr(t))
         }
 
     rule recursive_closure() -> Term
-        = "fun" __ f:variable() _ x:variable() _ "->" _ t:term() {
+        = "fun" __ f:variable() _ x:variable() _ ("->" / "=>") _ t:term() {
             Term::RecursiveClosure(f, x, expr(t))
         }
 
