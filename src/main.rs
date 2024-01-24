@@ -1,4 +1,7 @@
-use std::{env, io};
+use std::{
+    env,
+    io::{self, IsTerminal, Write},
+};
 
 use expression::Expression;
 use term::Term;
@@ -15,22 +18,30 @@ mod types;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    println!(
-        "Enter statements here! Examples can be found in ./example1, ./example2 and ./example3"
-    );
-    println!("To finish the program, press Ctrl+D");
-    println!("To use an input file: Run {} < (input file name)", args[0]);
-
     let stdin = io::stdin();
+    if stdin.is_terminal() {
+        println!(
+            "Enter statements here! Examples can be found in ./example1, ./example2 and ./example3"
+        );
+        println!("To finish the program, press Ctrl+D or enter a blank line");
+        println!("To use an input file: Run {} < (input file name)", args[0]);
+
+        print!(">>> ");
+        let _ = io::stdout().flush();
+    }
+
     let mut input = String::new();
     let mut buf = String::new();
     while let Ok(count) = stdin.read_line(&mut buf) {
-        if count == 0 {
+        if count == 0 || (buf.trim().len() == 0 && stdin.is_terminal()) {
             break;
         }
 
         input.push_str(&buf);
         buf.clear();
+
+        print!("... ");
+        let _ = io::stdout().flush();
     }
 
     let program = parser::parse(&input);
