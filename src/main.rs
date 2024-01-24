@@ -1,9 +1,10 @@
 use std::{
     env,
-    io::{self, IsTerminal, Write},
+    io::{self, IsTerminal},
 };
 
 use expression::Expression;
+use rustyline::DefaultEditor;
 use term::Term;
 
 use crate::analysis::analyse;
@@ -18,32 +19,33 @@ mod types;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let stdin = io::stdin();
-    if stdin.is_terminal() {
+    let is_terminal = io::stdin().is_terminal();
+    let mut rl = DefaultEditor::new().unwrap();
+    let mut rl_prompt = ">>> ";
+
+    if is_terminal {
         println!(
             "Enter statements here! Examples can be found in ./example1, ./example2 and ./example3"
         );
         println!("To finish the program, press Ctrl+D or enter a blank line");
         println!("To use an input file: Run {} < (input file name)", args[0]);
-
-        print!(">>> ");
-        let _ = io::stdout().flush();
     }
 
     let mut input = String::new();
-    let mut buf = String::new();
-    while let Ok(count) = stdin.read_line(&mut buf) {
-        if count == 0 || (buf.trim().len() == 0 && stdin.is_terminal()) {
+    while let Ok(line) = rl.readline(rl_prompt) {
+        if line.len() == 0 && is_terminal {
             break;
         }
 
-        input.push_str(&buf);
-        buf.clear();
-
-        print!("... ");
-        let _ = io::stdout().flush();
+        input.push_str(&line);
+        input.push('\n');
+        rl_prompt = "... ";
     }
 
+    input = input.trim_end().to_string();
+    if input.len() == 0 {
+        return;
+    }
     let program = parser::parse(&input);
 
     // uncomment this example program if the parser fails for whatever reason
