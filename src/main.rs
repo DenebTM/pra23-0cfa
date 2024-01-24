@@ -15,7 +15,9 @@ mod types;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    println!("Enter statements here! Examples can be found in ./example1 and ./example2");
+    println!(
+        "Enter statements here! Examples can be found in ./example1, ./example2 and ./example3"
+    );
     println!("To finish the program, press Ctrl+D");
     println!("To use an input file: Run {} < (input file name)", args[0]);
 
