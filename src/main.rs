@@ -93,13 +93,14 @@ fn main() {
         vec
     };
 
+    let constraints = program.constraints();
     println!("\nConstraints:");
-    for constraint in program.constraints() {
+    for constraint in &constraints {
         println!("  {constraint}");
     }
 
     println!("\nAnalysis:");
-    let (analysis_cache, analysis_env) = analyse(&program);
+    let (analysis_cache, analysis_env) = analyse(&program, &constraints);
     for label in labels {
         let terms = analysis_cache[&label]
             .iter()

@@ -65,7 +65,7 @@ impl Expression {
     }
 
     pub fn constraints(&self) -> HashSet<Constraint> {
-        self.constr(&self)
+        self.constr(&self.subterms())
     }
 
     fn subexprs(&self) -> HashSet<&Expression> {
@@ -93,11 +93,11 @@ impl Expression {
         expressions
     }
 
-    fn subterms(&self) -> HashSet<&Term> {
+    pub fn subterms(&self) -> HashSet<&Term> {
         self.subexprs().iter().map(|e| &e.term).collect()
     }
 
-    fn constr(&self, top_expr: &Expression) -> HashSet<Constraint> {
+    fn constr(&self, subterms: &HashSet<&Term>) -> HashSet<Constraint> {
         let mut constraints: HashSet<Constraint> = HashSet::new();
 
         use ConSet::*;
@@ -114,7 +114,7 @@ impl Expression {
                     SingleTerm(Term::Closure(*x, e0.clone())),
                     Cache(self.label),
                 ));
-                constraints.extend(e0.constr(top_expr));
+                constraints.extend(e0.constr(subterms));
             }
 
             Term::RecursiveClosure(x, f, e0) => {
@@ -128,12 +128,12 @@ impl Expression {
                         Env(*x),
                     ),
                 ]);
-                constraints.extend(e0.constr(top_expr));
+                constraints.extend(e0.constr(subterms));
             }
 
-            Term::Application(e1, e2) => top_expr.subterms().iter().for_each(|&t| {
-                constraints.extend(e1.constr(top_expr));
-                constraints.extend(e2.constr(top_expr));
+            Term::Application(e1, e2) => subterms.iter().for_each(|&t| {
+                constraints.extend(e1.constr(subterms));
+                constraints.extend(e2.constr(subterms));
                 if let Term::Closure(x, e0) | Term::RecursiveClosure(x, _, e0) = t {
                     constraints.extend([
                         Conditional((t.clone(), Cache(e1.label)), Cache(e2.label), Env(*x)),
@@ -147,9 +147,9 @@ impl Expression {
             }),
 
             Term::IfThenElse(e0, e1, e2) => {
-                constraints.extend(e0.constr(top_expr));
-                constraints.extend(e1.constr(top_expr));
-                constraints.extend(e2.constr(top_expr));
+                constraints.extend(e0.constr(subterms));
+                constraints.extend(e1.constr(subterms));
+                constraints.extend(e2.constr(subterms));
                 constraints.extend([
                     Unconditional(Cache(e1.label), Cache(self.label)),
                     Unconditional(Cache(e2.label), Cache(self.label)),
@@ -157,8 +157,8 @@ impl Expression {
             }
 
             Term::Let(x, e1, e2) => {
-                constraints.extend(e1.constr(top_expr));
-                constraints.extend(e2.constr(top_expr));
+                constraints.extend(e1.constr(subterms));
+                constraints.extend(e2.constr(subterms));
                 constraints.extend([
                     Unconditional(Cache(e1.label), Env(*x)),
                     Unconditional(Cache(e2.label), Cache(self.label)),
@@ -166,8 +166,8 @@ impl Expression {
             }
 
             Term::BinaryOp(e1, _, e2) => {
-                constraints.extend(e1.constr(top_expr));
-                constraints.extend(e2.constr(top_expr));
+                constraints.extend(e1.constr(subterms));
+                constraints.extend(e2.constr(subterms));
             }
         }
 

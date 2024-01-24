@@ -22,7 +22,10 @@ fn add(
     }
 }
 
-pub fn analyse(expr: &Expression) -> (AbstractCache, AbstractEnv) {
+pub fn analyse(
+    expr: &Expression,
+    constraints: &HashSet<Constraint>,
+) -> (AbstractCache, AbstractEnv) {
     let nodes: HashSet<ConSet> = expr
         .labels()
         .iter()
@@ -35,14 +38,14 @@ pub fn analyse(expr: &Expression) -> (AbstractCache, AbstractEnv) {
 
     let (mut node_data, mut edges): (
         HashMap<ConSet, HashSet<Term>>,
-        HashMap<ConSet, HashSet<Constraint>>,
+        HashMap<ConSet, HashSet<&Constraint>>,
     ) = nodes
         .iter()
         .map(|q| ((q.clone(), HashSet::new()), (q.clone(), HashSet::new())))
         .unzip();
 
     // Step 2: Building the graph
-    for constraint in expr.constraints() {
+    for constraint in constraints {
         use ConSet::*;
         use Constraint::*;
         match &constraint {
@@ -59,7 +62,7 @@ pub fn analyse(expr: &Expression) -> (AbstractCache, AbstractEnv) {
             },
 
             Conditional((_t, p), p1, _p2) => {
-                edges.get_mut(p1).unwrap().insert(constraint.clone());
+                edges.get_mut(p1).unwrap().insert(constraint);
                 edges.get_mut(p).unwrap().insert(constraint);
             }
         }

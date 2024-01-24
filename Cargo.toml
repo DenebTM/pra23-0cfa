@@ -10,3 +10,6 @@ edition = "2021"
 fmtastic = "0.1.0"
 peg = "0.8.2"
 pest_derive = "2.7.5"
+
+[profile.release]
+debug = true
