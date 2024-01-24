@@ -109,24 +109,18 @@ impl Expression {
                 constraints.insert(Unconditional(Env(*x), Cache(self.label)));
             }
 
-            Term::Closure(x, e0) => {
+            Term::Closure(_, e0) => {
                 constraints.insert(Unconditional(
-                    SingleTerm(Term::Closure(*x, e0.clone())),
+                    SingleTerm(self.term.clone()),
                     Cache(self.label),
                 ));
                 constraints.extend(e0.constr(subterms));
             }
 
-            Term::RecursiveClosure(x, f, e0) => {
+            Term::RecursiveClosure(x, _, e0) => {
                 constraints.extend([
-                    Unconditional(
-                        SingleTerm(Term::RecursiveClosure(*x, *f, e0.clone())),
-                        Cache(self.label),
-                    ),
-                    Unconditional(
-                        SingleTerm(Term::RecursiveClosure(*x, *f, e0.clone())),
-                        Env(*x),
-                    ),
+                    Unconditional(SingleTerm(self.term.clone()), Cache(self.label)),
+                    Unconditional(SingleTerm(self.term.clone()), Env(*x)),
                 ]);
                 constraints.extend(e0.constr(subterms));
             }
