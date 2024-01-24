@@ -27,8 +27,8 @@ fn main() {
         println!(
             "Enter statements here! Examples can be found in ./example1, ./example2 and ./example3"
         );
-        println!("To finish the program, press Ctrl+D or enter a blank line");
-        println!("To use an input file: Run {} < (input file name)", args[0]);
+        println!("To finish the program, press Ctrl+D or enter a blank line.");
+        println!("To use an input file, run: {} < (path/to/file)", args[0]);
     }
 
     let mut input = String::new();
