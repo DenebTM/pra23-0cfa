@@ -47,6 +47,7 @@ fn main() {
         }
 
         input = input.trim_end().to_string();
+        input.push(' ');
         if input.len() == 0 {
             return;
         }

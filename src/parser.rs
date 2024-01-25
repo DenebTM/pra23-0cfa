@@ -13,15 +13,18 @@ peg::parser!(grammar func() for str {
     rule __ = quiet!{ [' ' | '\n']+ }
     rule _  = quiet!{ [' ' | '\n']* }
     rule ws_or_eof() = &(_ / ![_])
-    rule alpha() -> char = ['a'..='z' | 'A'..='Z']
-    rule digit() -> char = ['0'..='9']
-    rule keyword() = "if" / "then" / "else" / "let" / "in"
+    rule alpha() -> char = quiet!{ ['a'..='z' | 'A'..='Z'] }
+    rule digit() -> char = quiet!{ ['0'..='9'] }
+    rule neg() -> char = quiet!{ ['-'] }
+    rule keyword() = quiet! {"if" / "then" / "else" / "let" / "in" }
 
     rule constant() -> Constant
-        = n:$("-"? digit()+) {? n.parse().or(Err("i32")) }
+        = n:$(neg()? digit()+) {? n.parse().or(Err("i32")) }
+        / expected!("constant")
 
     rule variable() -> Variable
         = !keyword() x:alpha() ws_or_eof() { x }
+        / expected!("variable")
 
     rule closure() -> Term
         = "fn" __ x:variable() _ ("->" / "=>") _ t:term() {
@@ -34,7 +37,7 @@ peg::parser!(grammar func() for str {
         }
 
     rule if_then_else() -> Term
-        = "if" __ t0:term() __ "then" _ t1:term() __ "else" __ t2:term() {
+        = "if" __ t0:term() __ "then" __ t1:term() __ "else" __ t2:term() {
             Term::IfThenElse(expr(t0), expr(t1), expr(t2))
         }
 
