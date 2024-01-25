@@ -47,10 +47,10 @@ fn main() {
         }
 
         input = input.trim_end().to_string();
-        input.push(' ');
         if input.len() == 0 {
             return;
         }
+        input.push(' ');
         let program = parser::parse(&input);
 
         // parse error -> print location of the error

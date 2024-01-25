@@ -32,7 +32,7 @@ peg::parser!(grammar func() for str {
         }
 
     rule recursive_closure() -> Term
-        = "fun" __ f:variable() _ x:variable() _ ("->" / "=>") _ t:term() {
+        = "fun" __ f:variable() __ x:variable() _ ("->" / "=>") _ t:term() {
             Term::RecursiveClosure(f, x, expr(t))
         }
 
@@ -72,7 +72,7 @@ peg::parser!(grammar func() for str {
                 v:variable() { Term::Variable(v) }
                 --
                 "(" _ t:term() _ ")" { t }
-            }
+            } _
         { t }
 });
 
