@@ -46,7 +46,7 @@ peg::parser!(grammar func() for str {
             Term::Let(x, expr(t1), expr(t2))
         }
 
-    pub rule term() -> Term
+    rule term() -> Term
         = _ t:precedence!{
                 l:let() { l }
                 --
@@ -72,8 +72,10 @@ peg::parser!(grammar func() for str {
                 v:variable() { Term::Variable(v) }
                 --
                 "(" _ t:term() _ ")" { t }
-            } _
+            }
         { t }
+
+        pub rule program() -> Term = t:term() _ { t }
 });
 
 fn relabel(expr: Expression, start: Label) -> (Expression, Label) {
@@ -166,7 +168,7 @@ fn relabel(expr: Expression, start: Label) -> (Expression, Label) {
 }
 
 pub fn parse(input: &str) -> Result<Expression, ParseError<LineCol>> {
-    let term = func::term(input)?;
+    let program = func::program(input)?;
 
-    Ok(relabel(*expr(term), 1).0)
+    Ok(relabel(*expr(program), 1).0)
 }
