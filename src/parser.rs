@@ -10,8 +10,8 @@ fn expr(term: Term) -> Box<Expression> {
 }
 
 peg::parser!(grammar func() for str {
-    rule __ = [' ' | '\n']+
-    rule _  = [' ' | '\n']*
+    rule __ = quiet!{ [' ' | '\n']+ }
+    rule _  = quiet!{ [' ' | '\n']* }
     rule ws_or_eof() = &(_ / ![_])
     rule alpha() -> char = ['a'..='z' | 'A'..='Z']
     rule digit() -> char = ['0'..='9']
@@ -61,9 +61,9 @@ peg::parser!(grammar func() for str {
                 x:(@) _ op:$("<=" / "==" / "!=" / ">=")  _ y:@ { Term::BinaryOp(expr(x), op.to_string(), expr(y)) }
                 x:(@) _ op:$("<" / ">")  _ y:@ { Term::BinaryOp(expr(x), op.to_string(), expr(y)) }
                 --
-                x:(@) _ op:['+' | '-'] _ y:@ { Term::BinaryOp(expr(x), op.to_string(), expr(y)) }
+                x:(@) _ op:$("+" / "-") _ y:@ { Term::BinaryOp(expr(x), op.to_string(), expr(y)) }
                 --
-                x:(@) _ op:['*' | '/'] _ y:@ { Term::BinaryOp(expr(x), op.to_string(), expr(y)) }
+                x:(@) _ op:$("*" / "/") _ y:@ { Term::BinaryOp(expr(x), op.to_string(), expr(y)) }
                 --
                 n:constant() { Term::Constant(n) }
                 v:variable() { Term::Variable(v) }

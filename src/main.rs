@@ -65,7 +65,7 @@ fn main() {
 
             println!("Expected {}", err.expected);
 
-            return;
+            continue;
         }
 
         // parsed successfully -> proceed with analysis
