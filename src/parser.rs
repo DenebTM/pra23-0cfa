@@ -16,7 +16,7 @@ peg::parser!(grammar func() for str {
     rule alpha() -> char = quiet!{ ['a'..='z' | 'A'..='Z'] }
     rule digit() -> char = quiet!{ ['0'..='9'] }
     rule neg() -> char = quiet!{ ['-'] }
-    rule keyword() = quiet! {"if" / "then" / "else" / "let" / "in" }
+    rule keyword() = quiet! { "fn" / "fun" / "if" / "then" / "else" / "let" / "in" }
 
     rule constant() -> Constant
         = n:$(neg()? digit()+) {? n.parse().or(Err("i32")) }
