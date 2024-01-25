@@ -75,24 +75,24 @@ peg::parser!(grammar func() for str {
 
 fn relabel(expr: Expression, start: Label) -> (Expression, Label) {
     match expr.term {
-        Term::Closure(x, e1) => {
-            let (new_e1, next) = relabel(*e1, start);
+        Term::Closure(x, e0) => {
+            let (new_e0, next) = relabel(*e0, start);
 
             (
                 Expression {
-                    term: Term::Closure(x, Box::new(new_e1)),
+                    term: Term::Closure(x, Box::new(new_e0)),
                     label: next,
                 },
                 next + 1,
             )
         }
 
-        Term::RecursiveClosure(f, x, e1) => {
-            let (new_e1, next) = relabel(*e1, start);
+        Term::RecursiveClosure(f, x, e0) => {
+            let (new_e0, next) = relabel(*e0, start);
 
             (
                 Expression {
-                    term: Term::RecursiveClosure(f, x, Box::new(new_e1)),
+                    term: Term::RecursiveClosure(f, x, Box::new(new_e0)),
                     label: next,
                 },
                 next + 1,

@@ -33,8 +33,8 @@ impl Expression {
                 variables.extend(e0.variables());
             }
 
-            Term::RecursiveClosure(x, f, e0) => {
-                variables.extend([x, f]);
+            Term::RecursiveClosure(f, x, e0) => {
+                variables.extend([f, x]);
                 variables.extend(e0.variables());
             }
 
@@ -110,21 +110,21 @@ impl Expression {
             }
 
             Term::Closure(_, e0) => {
+                constraints.extend(e0.constr(subterms));
+
                 constraints.insert(Unconditional(
                     SingleTerm(self.term.clone()),
                     Cache(self.label),
                 ));
-
-                constraints.extend(e0.constr(subterms));
             }
 
-            Term::RecursiveClosure(x, _, e0) => {
+            Term::RecursiveClosure(f, _, e0) => {
+                constraints.extend(e0.constr(subterms));
+
                 constraints.extend([
                     Unconditional(SingleTerm(self.term.clone()), Cache(self.label)),
-                    Unconditional(SingleTerm(self.term.clone()), Env(*x)),
+                    Unconditional(SingleTerm(self.term.clone()), Env(*f)),
                 ]);
-
-                constraints.extend(e0.constr(subterms));
             }
 
             Term::Application(e1, e2) => {
@@ -132,7 +132,7 @@ impl Expression {
                 constraints.extend(e2.constr(subterms));
 
                 subterms.iter().for_each(|&t| {
-                    if let Term::Closure(x, e0) | Term::RecursiveClosure(x, _, e0) = t {
+                    if let Term::Closure(x, e0) | Term::RecursiveClosure(_, x, e0) = t {
                         constraints.extend([
                             Conditional((t.clone(), Cache(e1.label)), Cache(e2.label), Env(*x)),
                             Conditional(
