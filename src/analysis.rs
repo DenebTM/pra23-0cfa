@@ -22,6 +22,11 @@ fn add(
     }
 }
 
+/**
+ * expected to be called with `expr` and `expr.constraints()`
+ *
+ * this is so that the constraints can be obtained and used beforehand, e.g. for printing
+ */
 pub fn analyse(
     expr: &Expression,
     constraints: &HashSet<Constraint>,

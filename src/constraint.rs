@@ -7,8 +7,11 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ConSet {
+    /// C(`l`)
     Cache(Label),
+    /// r(`x`)
     Env(Variable),
+    /// {`t`}
     SingleTerm(Term),
 }
 
@@ -24,7 +27,9 @@ impl Display for ConSet {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Constraint {
+    /// `LHS` ⊆ `RHS`
     Unconditional(ConSet, ConSet),
+    // (`{t}` ⊆ `RHS'`) => `LHS` ⊆ `RHS`
     Conditional((Term, ConSet), ConSet, ConSet),
 }
 

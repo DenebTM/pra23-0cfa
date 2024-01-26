@@ -167,6 +167,7 @@ fn relabel(expr: Expression, start: Label) -> (Expression, Label) {
     }
 }
 
+/// `input` is expected to end with a space (improves parser output)
 pub fn parse(input: &str) -> Result<Expression, ParseError<LineCol>> {
     let program = func::program(input)?;
 
