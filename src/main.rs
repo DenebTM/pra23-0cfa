@@ -24,9 +24,7 @@ fn main() {
     rl.set_auto_add_history(true);
 
     if is_terminal {
-        println!(
-            "Enter statements here! Examples can be found in ./example1, ./example2 and ./example3"
-        );
+        println!("Enter statements here! Examples can be found in ./example1 through ./example4.");
         println!("To finish the program, press Ctrl+D or submit a blank line.");
         println!("To use an input file, run: {} < (path/to/file)", args[0]);
         println!("To exit, press Ctrl+C or submit a blank program.")
