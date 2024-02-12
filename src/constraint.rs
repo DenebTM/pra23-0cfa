@@ -29,7 +29,7 @@ impl Display for ConSet {
 pub enum Constraint {
     /// `LHS` ⊆ `RHS`
     Unconditional(ConSet, ConSet),
-    // (`{t}` ⊆ `RHS'`) => `LHS` ⊆ `RHS`
+    // ({`t`} ⊆ `RHS'`) => `LHS` ⊆ `RHS`
     Conditional((Term, ConSet), ConSet, ConSet),
 }
 

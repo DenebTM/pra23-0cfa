@@ -10,6 +10,7 @@ use crate::{
 pub type AbstractCache = HashMap<Label, HashSet<Term>>;
 pub type AbstractEnv = HashMap<Variable, HashSet<Term>>;
 
+#[inline(always)]
 fn add(
     index: &ConSet,
     terms: HashSet<Term>,
